@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcript Extractor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .input-group {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 25px 0;
+            color: #667eea;
+            font-weight: 600;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fc;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            display: none;
+        }
+        .error {
+            background: #fff5f5;
+            border-left-color: #e53e3e;
+            color: #c53030;
+        }
+        .success {
+            background: #f0fff4;
+            border-left-color: #38a169;
+            color: #2f855a;
+        }
+        .transcript {
+            line-height: 1.8;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #2d3748;
+        }
+        .meta-info {
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #718096;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .copy-btn {
+            margin-top: 15px;
+            width: auto;
+            padding: 10px 20px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #48bb78, #38a169);
+        }
+        .copy-btn:hover {
+            background: linear-gradient(135deg, #38a169, #2f855a);
+        }
+        .test-btn {
+            margin-left: 10px;
+            width: auto;
+            padding: 10px 20px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+        }
+        .test-btn:hover {
+            background: linear-gradient(135deg, #dd6b20, #c05621);
+        }
+        .example-urls {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #718096;
+        }
+        .example-urls a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .example-urls a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 YouTube Transcript Extractor</h1>
+        
+        <div class="input-group">
+            <label for="videoUrl">YouTube Video URL:</label>
+            <input type="text" id="videoUrl" placeholder="https://www.youtube.com/watch?v=..." />
+            <div class="example-urls">
+                <strong>Examples:</strong>
+                <a href="#" onclick="fillExample('https://www.youtube.com/watch?v=ZacjOVVgoLY')">Test Video 1</a>
+                <a href="#" onclick="fillExample('https://youtu.be/dQw4w9WgXcQ')">Test Video 2</a>
+            </div>
+        </div>
+        
+        <button onclick="getTranscript()">Get Transcript</button>
+        <button class="test-btn" onclick="testAPI()">Test API</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <span>Extracting transcript...</span>
+        </div>
+        
+        <div class="result" id="result">
+            <div class="meta-info" id="metaInfo"></div>
+            <h3>Transcript:</h3>
+            <div class="transcript" id="transcript"></div>
+            <button class="copy-btn" onclick="copyTranscript()">📋 Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script>
+        function fillExample(url) {
+            document.getElementById('videoUrl').value = url;
+        }
+
+        function getTranscript() {
+            const videoUrl = document.getElementById('videoUrl').value.trim();
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            if (!videoUrl) {
+                alert('Please enter a valid YouTube URL.');
+                return;
+            }
+            
+            // Show loading
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            // Make request to Flask backend
+            fetch(`/transcribe?videoUrl=${encodeURIComponent(videoUrl)}`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.error) {
+                        showError(data.error);
+                    } else {
+                        showTranscript(data.transcript, data.video_id, data.source);
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    showError('An error occurred while fetching the transcript.');
+                    console.error('Error:', error);
+                });
+        }
+        
+        function testAPI() {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            fetch('/test')
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.api_working) {
+                        showTranscript(data.transcript_preview, data.test_video_id, 'API Test - Working!');
+                    } else {
+                        showError(`API Test Failed: ${data.transcript_preview}`);
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    showError('API test failed.');
+                    console.error('Error:', error);
+                });
+        }
+        
+        function showTranscript(transcript, videoId, source) {
+            const result = document.getElementById('result');
+            const transcriptDiv = document.getElementById('transcript');
+            const metaInfo = document.getElementById('metaInfo');
+            
+            transcriptDiv.textContent = transcript;
+            metaInfo.innerHTML = `<span>Video ID: <strong>${videoId}</strong></span><span>Source: <strong>${source}</strong></span>`;
+            result.className = 'result success';
+            result.style.display = 'block';
+        }
+        
+        function showError(message) {
+            const result = document.getElementById('result');
+            const transcriptDiv = document.getElementById('transcript');
+            const metaInfo = document.getElementById('metaInfo');
+            
+            transcriptDiv.textContent = message;
+            metaInfo.innerHTML = '<span style="color: #e53e3e;"><strong>Error occurred</strong></span>';
+            result.className = 'result error';
+            result.style.display = 'block';
+        }
+        
+        function copyTranscript() {
+            const transcript = document.getElementById('transcript').textContent;
+            
+            navigator.clipboard.writeText(transcript).then(() => {
+                alert('Transcript copied to clipboard!');
+            }).catch(() => {
+                alert('Failed to copy transcript. Please select and copy manually.');
+            });
+        }
+        
+        // Allow Enter key to trigger transcript extraction
+        document.getElementById('videoUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getTranscript();
+            }
+        });
+    </script>
+</body>
+</html>
